@@ -12,19 +12,28 @@ if (count(groups)&1) {
 }
 
 class Competition {
+	private $useExtraBot = false;
 	private $config;
 	private $groups;
 	function __construct($config) {
 		$this->config = $config;
 		$this->groups = $this->getAllGroups();
+		if (count($this->groups)&1) {
+			//uneven number of groups
+			$this->useExtraBot = true;
+		}
 		$this->compileAllGroups();
+	}
+	
+	function run() {
 		
 	}
 	
-	function runCompetitionRounds() {
-		
+	function compileAllGroups() {
+		foreach ($this->groups as $group) {
+			
+		} 
 	}
-	
 	
 	function getAllGroups() {
 		$prefix = $this->config['paths']['submissionsDirPrefix'];
@@ -35,11 +44,11 @@ class Competition {
 			$pattern = '/^'.$pattern.'(\d+)/';
 			preg_match($pattern, $dir, $matches);
 			$groupNumber = (int)end($matches);
-			if ($groupNumer > 0) {
+			if ($groupNumber > 0) {
 				//valid group, add it
 				$groups[$groupNumber] = $groupNumber;
 			} else {
-				echo "Unable to load all groups. Trying to get group number from dir " . $dir.". Exiting...\n";
+				echo "Unable to load all groups. Trying to get group number from dir '" . $dir."'. Exiting...\n";
 				exit;
 			}
 		}
