@@ -1,0 +1,4 @@
+Competition
+===========
+
+Competition scripts
