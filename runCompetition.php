@@ -153,9 +153,12 @@ class Competition {
 		return $winner;
 		
 		
-		//reset to original working directory
 	}
 	
+	/**
+	 * Store game state strings, and run visualizer script as well to get html file
+	 * 
+	 */
 	function storeGameResult($player1, $player2, $winner, $map, $resultString) {
 		$resultDir = $this->config['paths']['tournamentResults'];
 		$roundDir = $resultDir.$this->round."/";
@@ -166,6 +169,17 @@ class Competition {
 		
 		$gameFile = $batchResultsDir."w".$winner."_".$player1."-".$player2."_".$map; 
 		file_put_contents($gameFile, $resultString);
+		
+		$visualizationDir = substr($gameFile, 0, strlen($gameFile) - 4)."/";
+		mkdir($visualizationDir);
+		shell_exec("cp -r ".$this->config['paths']['visualizer']."* ".$visualizationDir);
+		shell_exec("cat ".$gameFile." | python ".$visualizationDir."visualize_locally.py");
+		
+		$html = file_get_contents($visualizationDir."generated.htm");
+		$html = str_replace("%PLAYER1%", "player1", $html);
+		$html = str_replace("%PLAYER2%", "player2", $html);
+		$html = str_replace("%ROUND%", "round", $html);
+		file_put_contents($visualizationDir."generated.htm", $html);
 	}
 	
 	function getGameResult($resultString, $player1, $player2) {
