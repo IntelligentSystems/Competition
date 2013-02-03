@@ -12,8 +12,6 @@ if (count(groups)&1) {
 }
 
 class Competition {
-	private $useExtraBot = false;
-	private $extraBotGroupNr = 666;
 	private $config;
 	private $groups;
 	private $maps;
@@ -22,10 +20,6 @@ class Competition {
 		$this->config = $config;
 		$this->groups = $this->getAllGroups();
 		$this->maps = $this->getMaps();
-		if (count($this->groups)&1) {
-			//uneven number of groups
-			$this->useExtraBot = true;
-		}
 		$this->log("Compiling " . count($this->groups) . " groups");
 		$this->preProcessGroups();
 		$this->clearPreviousTournamentResults();
@@ -220,15 +214,6 @@ class Competition {
 			foreach ($removeGroups as $remGroup) {
 				unset($this->groups[$remGroup]);
 			}
-		}
-		if ($this->useExtraBot) {
-			$this->log("uneven number of bots. Adding our own extra bot");
-			$this->groups[] = $this->extraBotGroupNr;
-			$dest = $this->config['paths']['botsCompiled'].$this->extraBotGroupNr."/";
-			$this->copyFilesInDir($this->config['paths']['extraBot'],  $dest);
-			$this->copyFilesInDir($this->config['paths']['pwBotApi'], $dest);
-			$this->compileDir($dest);
-			
 		}
 	}
 	
