@@ -25,9 +25,9 @@
     <header>
       <table id="players">
          <tr>
-          <td width='10%'></td>
-          <td width='80%' align="center"><small>%ROUND%</small></td>
-          <td width='10%'></td>
+          <td width='40%'></td>
+          <td width='20%' align="center"><small>%ROUND%</small></td>
+          <td width='40%'></td>
         </tr>
         <tr>
           <td style="color: rgb(204, 0, 0); text-decoration: initial;" width='40%' align="right" class="player1Name">%PLAYER1%</td>

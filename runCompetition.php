@@ -176,9 +176,10 @@ class Competition {
 		shell_exec("cat ".$gameFile." | python ".$visualizationDir."visualize_locally.py");
 		
 		$html = file_get_contents($visualizationDir."generated.htm");
-		$html = str_replace("%PLAYER1%", "player1", $html);
-		$html = str_replace("%PLAYER2%", "player2", $html);
-		$html = str_replace("%ROUND%", "round", $html);
+		$html = str_replace("%PLAYER1%", $this->getBotName($player1), $html);
+		$html = str_replace("%PLAYER2%", $this->getBotName($player2), $html);
+		
+		$html = str_replace("%ROUND%", "Round ".$this->round, $html);
 		file_put_contents($visualizationDir."generated.htm", $html);
 	}
 	
