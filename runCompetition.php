@@ -105,7 +105,7 @@ class Competition {
 	}
 	
 	function prepareCompetitionDir($group1, $group2) {
-		
+		if (!strlen($group1) || !strlen($group2)) $this->error("Empty string passed as bot. No game to play..");
 		$competitionDir = $this->config['paths']['competitionDir'];
 		$this->emptyDir($competitionDir); //clean before using
 		$this->copyFilesInDir($this->config['paths']['botsCompiled'].$group1."/", $competitionDir);
