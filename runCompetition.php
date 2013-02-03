@@ -15,7 +15,9 @@ class Competition {
 	private $config;
 	private $groups;
 	private $maps;
+	
 	private $round = 0;
+	private $leagueGroup = 0;
 	function __construct($config) {
 		$this->config = $config;
 		$this->groups = $this->getAllGroups();
@@ -26,10 +28,99 @@ class Competition {
 	}
 	
 	function run() {
-		$this->runRound($this->groups);
+		$leagueGroups = $this->getMiniLeagueGroups();
+		$groups = $this->runLeague($leagueGroups);
+		
+		$this->runKnockoutRound($groups);
 	}
 	
-	function runRound($groups) {
+	function runLeague($groups) {
+		$winners = array();
+		foreach ($groups as $key => $group) {
+			$this->leagueGroup++;
+			$this->log("Running games for league group " + ($this->leagueGroup));
+			
+			$winners = array_merge($winners,$this->runLeagueForGroup($group));
+		}
+	}
+	
+	function runLeagueForGroup($group) {
+		$scores = array();
+		foreach ($group as $botId) {
+			$scores[$botId] = 0;
+		}
+		$schedule = $this->getLeagueSchedule($group);
+		foreach ($schedule as $game) {
+			$player2 = reset($game);
+			$player1 = key($game);
+			$winner = $this->getWinner($player1, $player2, false);
+			if ($winner == 0) {
+				//draw
+				$scores[$player1]++;
+				$scores[$player2]++;
+			} else {
+				$scores[$winner] += 3;
+			}
+		}
+		
+		//finished with all the games. select winners!
+		arsort($scores);
+		$winners = array();
+		$lowestWinningScore = 99999;
+		$leagueLog = "Outcome of mini league:\n";
+		foreach ($scores AS $botId => $score) {
+			if (count($winners < 2)) {
+				$winners[] = $botId;
+				if ($score < $lowestWinningScore) {
+					$lowestWinningScore = $score;
+				}
+			} else if ($score == $lowestWinningScore) {
+				$this->log("whoops: more than 2 bots won in this mini league!!");
+				var_export($scores);
+				exit;		
+			}
+			$leagueLog .= "\tgroup".$botId.": ".$score." points\n";
+		}
+		file_put_contents($this->config['paths']['competitionLog'], $leagueLog, FILE_APPEND);
+		return $winners;		
+	}
+	
+	function getLeagueSchedule($group) {
+		$schedule = array();
+		//we play once against every other bot in our group
+		foreach ($group AS $p1Key => $player1) {
+			foreach ($group AS $p2Key => $player2) {
+				if ($p2Key > $p1Key) {
+					$schedule[] = array($player1 => $player2);
+				}
+			}
+		}
+		return $schedule;
+	}
+	
+	function getMiniLeagueGroups() {
+		$league = array();
+		$groups = $this->groups;
+		shuffle($groups);
+		$numGroups = $this->config['game']['numMiniLeagues'];
+		$modulo = count($groups) % $numGroups;
+		$groupSize = (count($groups) - $modulo) / $numGroups;
+		$groupsAssigned = 0;
+		for ($groupNum = 0; $groupNum < $numGroups; $groupNum++) {
+			$size = $groupSize;
+			if ($modulo > 0) {
+				$size++;
+				$modulo--;
+			}
+			$league[] = array_slice($groups, $groupsAssigned, $size);
+			$groupsAssigned += $size;
+		}
+		
+		return $league;
+		
+	}
+	
+	function runKnockoutRound($groups) {
 		$this->round++;
 		echo "\n### Playing round ".$this->round." ###\n";
 		$winners = array();
@@ -40,7 +131,7 @@ class Competition {
 		if (count($winners) === 1) {
 			$this->log("We have a winnerrrrr! \n##### group".reset($winners)." #####");
 		} else {
-			$this->runRound($winners);
+			$this->runKnockoutRound($winners);
 		}
 	}
 	
@@ -66,7 +157,7 @@ class Competition {
 	 * @param unknown $group1
 	 * @param unknown $group2
 	 */
-	function getWinner($group1, $group2) {
+	function getWinner($group1, $group2, $forceWinner = true) {
 		echo "games: ".$group1." - ".$group2."\n\t";
 		$results = array(
 			0 => 0, //for keeping track of draws...
@@ -86,13 +177,18 @@ class Competition {
 		$roundWinner = 0;
 		
 		if ($results[$group1] === $results[$group2]) {
-			$rand = rand(1,2);
-			if ($rand === 1) { 
-				$roundWinner = $group1;
+			if ($forceWinner) {
+				$rand = rand(1,2);
+				if ($rand === 1) { 
+					$roundWinner = $group1;
+				} else {
+					$roundWinner = $group2;
+				}
+				echo("DRAW. Flipping a coin, and the winner is.... ".$roundWinner."!!\n");
 			} else {
-				$roundWinner = $group2;
+				//keep roundwinner as 0
+				echo "DRAW. (not flipping a coin here)\n";
 			}
-			echo("DRAW. Flipping a coin, and the winner is.... ".$roundWinner."!!\n");
 		} else if ($results[$group1] > $results[$group2]) {
 			$roundWinner = $group1;
 			echo("WINNER *** ".$group1." ***\n");
@@ -157,6 +253,12 @@ class Competition {
 		$resultDir = $this->config['paths']['tournamentResults'];
 		$roundDir = $resultDir.$this->round."/";
 		if (!is_dir($roundDir)) mkdir($roundDir);
+		
+		if ($this->leagueGroup > 0) { 
+			//we are in the mini league. store leagues in separate folders
+			$roundDir .= $this->leagueGroup."/";
+			if (!is_dir($roundDir)) mkdir($roundDir);
+		}
 		
 		$batchResultsDir = $roundDir.min($player1, $player2)."-".max($player1, $player2)."/";
 		if (!is_dir($batchResultsDir)) mkdir($batchResultsDir);
