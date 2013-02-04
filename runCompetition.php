@@ -137,6 +137,9 @@ class Competition {
 			//we check this, because we get an shell err msg when the dir is empty upon removing the content
 			shell_exec("rm -r ".$this->config['paths']['tournamentResults']."*");
 		}
+		if (file_exists($this->config['paths']['competitionLog'])) {
+			shell_exec("rm ".$this->config['paths']['competitionLog']);
+		}
 	}
 
 	function getMaps() {
