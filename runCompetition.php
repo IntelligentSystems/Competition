@@ -296,7 +296,21 @@ class Competition {
 			preg_match($pattern, $resultString, $matches);
 			$winner = (int)end($matches);
 			if ($winner < 1 || $winner > 2) {
-				$this->error("Unable to parse output results. Who is the winner?? \nCommand: ".$command."\nDir:".$dir."\nOutput: ".$resultString);
+				//no winner in output...
+				$pattern2 = "/.*WARNING: player (\d) crashed/";//WARNING: player 2 crashed
+				preg_match($pattern2, $resultString, $matches2);
+				$crashedPlayer = (int)end($matches2);
+				if ($crashedPlayer === 1 || $crashedPlayer === 2) {
+					$this->log("Player ".$crashedPlayer." crashed. LOSE!");
+					if ($crashedPlayer === 1) {
+						$winner = 2;
+					} else {
+						$crashedPlayer = 1;
+					}
+				} else {
+					$this->error("Unable to parse output results. Who is the winner?? \nCommand: ".$command."\nDir:".$dir."\nOutput: ".$resultString);
+				}
+				
 			}
 			$winner = ($winner === 1? $player1: $player2);
 			return $winner;
