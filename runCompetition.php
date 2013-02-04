@@ -236,8 +236,15 @@ class Competition {
 		proc_close($process);
 		
 		chdir($workingDir);
-		if (strpos($resultString, "you missed a turn!") || strpos($gameStatesString, "you missed a turn!")) {
-			$this->log("one of the bots missed at least one turn");
+		if (strpos($resultString, "you missed a turn!")) {
+			$missedTurns = array(1 => 0, 2 => 0);
+			$pattern = "/Client (\d) timeout: you missed a turn/";
+			preg_match_all($pattern, $resultString, $matches);
+			foreach ($matches[1] as $match) {
+				$missedTurns[(int)$match]++;
+			} 
+			echo ("Missed Turns: P1-".$missedTurns[1]." P2-".$missedTurns[2]);//Client 2 timeout: you missed a turn! 
+			
 		}
 		$winner = $this->getGameResult($resultString, $player1, $player2, $cmd, $this->config['paths']['competitionDir']);
 		$this->storeGameResult($player1, $player2, $winner, $map, $gameStatesString);
