@@ -30,7 +30,7 @@ class Competition {
 	function run() {
 		$leagueGroups = $this->getMiniLeagueGroups();
 		$groups = $this->runLeague($leagueGroups);
-		
+		$this->leagueGroup = 0; //reset, so we store stuff in the proper folder
 		$this->runKnockoutRound($groups);
 	}
 	
