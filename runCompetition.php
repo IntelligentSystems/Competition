@@ -7,10 +7,6 @@ $config = parse_ini_file("config.ini", true);
 $competition = new Competition($config);
 $competition->run();
 
-if (count(groups)&1) {
-	$groups[] = 666; //use our optional bot (probably bullybot) to make it an even number
-}
-
 class Competition {
 	private $config;
 	private $groups;
@@ -240,7 +236,7 @@ class Competition {
 		if (strpos($resultString, "you missed a turn!") || strpos($gameStatesString, "you missed a turn!")) {
 			$this->log("one of the bots missed at least one turn");
 		}
-		$winner = $this->getGameResult($resultString, $player1, $player2);
+		$winner = $this->getGameResult($resultString, $player1, $player2, $cmd, $this->config['paths']['competitionDir']);
 		$this->storeGameResult($player1, $player2, $winner, $map, $gameStatesString);
 		return $winner;
 		
@@ -281,7 +277,7 @@ class Competition {
 		file_put_contents($visualizationDir."generated.htm", $html);
 	}
 	
-	function getGameResult($resultString, $player1, $player2) {
+	function getGameResult($resultString, $player1, $player2, $command, $dir) {
 		if (strpos($resultString, "Draw") !== false) {
 			//we have a draw...
 			return 0;
@@ -290,7 +286,7 @@ class Competition {
 			preg_match($pattern, $resultString, $matches);
 			$winner = (int)end($matches);
 			if ($winner < 1 || $winner > 2) {
-				$this->error("Unable to parse output results. Who is the winner?? Output: ".$resultString);
+				$this->error("Unable to parse output results. Who is the winner?? \nCommand: ".$command."\nDir:".$dir."\nOutput: ".$resultString);
 			}
 			$winner = ($winner === 1? $player1: $player2);
 			return $winner;
