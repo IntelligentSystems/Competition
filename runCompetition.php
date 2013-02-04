@@ -237,7 +237,9 @@ class Competition {
 		proc_close($process);
 		
 		chdir($workingDir);
-		
+		if (strpos($resultString, "you missed a turn!") || strpos($gameStatesString, "you missed a turn!")) {
+			$this->log("one of the bots missed at least one turn");
+		}
 		$winner = $this->getGameResult($resultString, $player1, $player2);
 		$this->storeGameResult($player1, $player2, $winner, $map, $gameStatesString);
 		return $winner;
