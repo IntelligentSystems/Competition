@@ -34,7 +34,7 @@ class Competition {
 		$winners = array();
 		foreach ($groups as $key => $group) {
 			$this->leagueGroup++;
-			$this->log("Running games for league group " + ($this->leagueGroup));
+			$this->log("Running games for league group " . ($this->leagueGroup));
 			
 			$winners = array_merge($winners,$this->runLeagueForGroup($group));
 		}
