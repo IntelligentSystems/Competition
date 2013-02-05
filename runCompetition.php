@@ -38,6 +38,7 @@ class Competition {
 			
 			$winners = array_merge($winners,$this->runLeagueForGroup($group));
 		}
+		return $winners;
 	}
 	
 	function runLeagueForGroup($group) {
