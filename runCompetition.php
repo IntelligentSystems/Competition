@@ -322,7 +322,7 @@ class Competition {
 				preg_match($pattern2, $resultString, $matches2);
 				$crashedPlayer = (int)end($matches2);
 				if ($crashedPlayer === 1 || $crashedPlayer === 2) {
-					$this->log("Player ".$crashedPlayer." crashed. LOSE!");
+					echo (" P".$crashedPlayer." crashed (LOSE!) ");
 					if ($crashedPlayer === 1) {
 						$winner = 2;
 					} else {
