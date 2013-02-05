@@ -4,9 +4,10 @@ ini_set('display_errors',1);
 // error_reporting(E_ALL);
 error_reporting(E_ALL ^ E_NOTICE);
 $config = parse_ini_file("config.ini", true);
-$competition = new Competition($config);
+
 $comResult = -1;
 while ($comResult === -1) {
+	$competition = new Competition($config);
 	//redo competition until we have a valid set of group winners 
 	$comResult = $competition->run();
 }
