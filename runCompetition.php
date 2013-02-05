@@ -118,6 +118,10 @@ class Competition {
 	}
 	
 	function runKnockoutRound($groups) {
+		if (!count($groups) || !(count($groups)&1)) {
+			var_export($groups);
+			$this->error("no (or uneven number) of groups passed to knockout phase");
+		}
 		$this->round++;
 		echo "\n### Playing round ".$this->round." ###\n";
 		$winners = array();
