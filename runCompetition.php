@@ -233,6 +233,7 @@ class Competition {
 				1 => array("pipe", "w"),  // stdout
 				2 => array("pipe", "w"),  // stderr
 		);
+		file_put_contents("lastExecutedCmd.txt", $cmd);
 		$process = proc_open($cmd, $descriptorspec, $pipes);
 		$gameStatesString = stream_get_contents($pipes[1]); //stdout
 		fclose($pipes[1]);
