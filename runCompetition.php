@@ -5,7 +5,11 @@ ini_set('display_errors',1);
 error_reporting(E_ALL ^ E_NOTICE);
 $config = parse_ini_file("config.ini", true);
 $competition = new Competition($config);
-$competition->run();
+$comResult = -1;
+while ($comResult === -1) {
+	//redo competition until we have a valid set of group winners 
+	$comResult = $competition->run();
+}
 
 class Competition {
 	private $config;
@@ -26,8 +30,13 @@ class Competition {
 	function run() {
 		$leagueGroups = $this->getMiniLeagueGroups();
 		$groups = $this->runLeague($leagueGroups);
+		if ($groups === -1) {
+			//more than two winners for a league. restart all
+			return -1;
+		}
 		$this->leagueGroup = 0; //reset, so we store stuff in the proper folder
 		$this->runKnockoutRound($groups);
+		return true;
 	}
 	
 	function runLeague($groups) {
@@ -36,7 +45,13 @@ class Competition {
 			$this->leagueGroup++;
 			$this->log("Running games for league group " . ($this->leagueGroup));
 			
-			$winners = array_merge($winners,$this->runLeagueForGroup($group));
+			$groupWinners = $this->runLeagueForGroup($group);
+			if ($groupWinners === -1) {
+				//more than two winners. restart all
+				return -1;
+			}
+			$winners = array_merge($winners,$groupWinners);
+			
 		}
 		return $winners;
 	}
@@ -72,9 +87,9 @@ class Competition {
 					$lowestWinningScore = $score;
 				}
 			} else if ($score == $lowestWinningScore) {
-				$this->log("whoops: more than 2 bots won in this mini league!!");
+				$this->log("whoops: more than 2 bots won in this mini league!! Starting alllll over again");
 				var_export($scores);
-				exit;		
+				return -1;
 			}
 			$leagueLog .= "\tgroup".$botId.": ".$score." points\n";
 		}
