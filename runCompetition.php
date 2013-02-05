@@ -66,7 +66,7 @@ class Competition {
 		$lowestWinningScore = 99999;
 		$leagueLog = "Outcome of mini league:\n";
 		foreach ($scores AS $botId => $score) {
-			if (count($winners < 2)) {
+			if (count($winners) < 2) {
 				$winners[] = $botId;
 				if ($score < $lowestWinningScore) {
 					$lowestWinningScore = $score;
