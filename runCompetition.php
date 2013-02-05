@@ -264,7 +264,7 @@ class Competition {
 			foreach ($matches[1] as $match) {
 				$missedTurns[(int)$match]++;
 			} 
-			echo ("Missed Turns: P1-".$missedTurns[1]." P2-".$missedTurns[2]);//Client 2 timeout: you missed a turn! 
+			echo ("Missed Turns: P1-".$missedTurns[1]." P2-".$missedTurns[2]." ");//Client 2 timeout: you missed a turn! 
 			
 		}
 		$winner = $this->getGameResult($resultString, $player1, $player2, $cmd, $this->config['paths']['competitionDir']);
