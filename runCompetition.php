@@ -138,8 +138,6 @@ class Competition {
 			$this->error("no groups passed to knockout phase");
 		}
 		if (count($groups)&1) {
-			//even, thats fine
-		} else {
 			$this->error("uneven number of groups passed to knockout phase");
 		}
 		$this->round++;
