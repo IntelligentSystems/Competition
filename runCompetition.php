@@ -16,6 +16,7 @@ class Competition {
 	private $config;
 	private $groups;
 	private $maps;
+	private $extraGames = false; //flag to indicate we are doing extra matches because of a draw
 	
 	private $round = 0;
 	private $leagueGroup = 0;
@@ -201,6 +202,7 @@ class Competition {
 		
 		if ($results[$group1] === $results[$group2]) {
 			if ($forceWinner) {
+				$this->extraGames = true;
 				$maps = $this->maps;
 				shuffle($maps);
 				foreach ($this->maps as $map) {
@@ -214,9 +216,11 @@ class Competition {
 						//yes!! this player won two games on this map. stop the loop, he won this round
 						$roundWinner = $gameWinner;
 						echo("WINNER *** ".$gameWinner." ***\n");
+						$this->extraGames = false;
 						break;
 					}
 				}
+				$this->extraGames = false;
 				//havent found a winner this way... just flip a coin
 				$rand = rand(1,2);
 				if ($rand === 1) {
@@ -258,7 +262,7 @@ class Competition {
 		
 		$workingDir = getcwd();
 		$resultFile = $player1."-".$player2."_".$map;
-		chdir($this->config['paths']['competitionDir']);
+		
 		$cmd = "java -jar PlayGame.jar ".$map;
 		$cmd .= " \"java -Xmx" . $this->config['game']['maxMemory'] ."m ".$player1BotName."\" \"java -Xmx" . $this->config['game']['maxMemory'] ."m ".$player2BotName."\"";
 		$cmd .= " parallel ".$this->config['game']['numTurns']." ".$this->config['game']['maxTurnTime'];
@@ -270,6 +274,7 @@ class Competition {
 				2 => array("pipe", "w"),  // stderr
 		);
 		file_put_contents("lastExecutedCmd.txt", $cmd);
+		chdir($this->config['paths']['competitionDir']);
 		$process = proc_open($cmd, $descriptorspec, $pipes);
 		$gameStatesString = stream_get_contents($pipes[1]); //stdout
 		fclose($pipes[1]);
@@ -309,10 +314,14 @@ class Competition {
 			$roundDir .= $this->leagueGroup."/";
 			if (!is_dir($roundDir)) mkdir($roundDir);
 		}
-		
+
 		$batchResultsDir = $roundDir.min($player1, $player2)."-".max($player1, $player2)."/";
 		if (!is_dir($batchResultsDir)) mkdir($batchResultsDir);
-		
+
+		if ($this->extraGames) {
+			$batchResultsDir .= "draw/";
+			if (!is_dir($batchResultsDir)) mkdir($batchResultsDir);
+		}
 		$gameFile = $batchResultsDir."w".$winner."_".$player1."-".$player2."_".$map; 
 		file_put_contents($gameFile, $resultString);
 		
