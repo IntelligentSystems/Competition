@@ -209,9 +209,9 @@ class Competition {
 				foreach ($this->maps as $map) {
 					
 					$gameWinner1 = $this->runGame($group1, $group2, $map);
-					echo $gameWinner." ";
+					echo $gameWinner1." ";
 					$gameWinner2 = $this->runGame($group2, $group1, $map);
-					echo $gameWinner." ";
+					echo $gameWinner2." ";
 					if ($gameWinner1 === $gameWinner2) {
 						//yes!! this player won two games on this map. stop the loop, he won this round
 						$roundWinner = $gameWinner1;
