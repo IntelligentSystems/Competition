@@ -205,16 +205,17 @@ class Competition {
 				$this->extraGames = true;
 				$maps = $this->maps;
 				shuffle($maps);
+				$this->log("playing maps consecutively now. First to win twice on 1 map wins");
 				foreach ($this->maps as $map) {
-					$this->log("playing maps consecutively now. First to win twice on 1 map wins");
+					
 					$gameWinner1 = $this->runGame($group1, $group2, $map);
 					echo $gameWinner." ";
 					$gameWinner2 = $this->runGame($group2, $group1, $map);
 					echo $gameWinner." ";
 					if ($gameWinner1 === $gameWinner2) {
 						//yes!! this player won two games on this map. stop the loop, he won this round
-						$roundWinner = $gameWinner;
-						echo("WINNER *** ".$gameWinner." ***\n");
+						$roundWinner = $gameWinner1;
+						echo("WINNER *** ".$gameWinner1." ***\n");
 						$this->extraGames = false;
 						break;
 					}
