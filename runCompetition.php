@@ -178,6 +178,7 @@ class Competition {
 	 * Run set of games on a set of maps, for these 2 players.
 	 * @param unknown $group1
 	 * @param unknown $group2
+	 * @param $forceWinner false: draws are possible, true: first player to win twice on 1 map wins. if still a draw, flip coins
 	 */
 	function getWinner($group1, $group2, $forceWinner = true) {
 		echo "games: ".$group1." - ".$group2."\n\t";
@@ -200,8 +201,25 @@ class Competition {
 		
 		if ($results[$group1] === $results[$group2]) {
 			if ($forceWinner) {
+				$maps = $this->maps;
+				shuffle($maps);
+				foreach ($this->maps as $map) {
+					$this->log("playing maps consecutively now. First to win twice on 1 map wins");
+					$gameWinner = $this->runGame($group1, $group2, $map);
+					echo $gameWinner." ";
+					$results[$gameWinner]++;
+					$gameWinner = $this->runGame($group2, $group1, $map);
+					echo $gameWinner." ";
+					if ($gameWinner === $gameWinner) {
+						//yes!! this player won two games on this map. stop the loop, he won this round
+						$roundWinner = $gameWinner;
+						echo("WINNER *** ".$gameWinner." ***\n");
+						break;
+					}
+				}
+				//havent found a winner this way... just flip a coin
 				$rand = rand(1,2);
-				if ($rand === 1) { 
+				if ($rand === 1) {
 					$roundWinner = $group1;
 				} else {
 					$roundWinner = $group2;
