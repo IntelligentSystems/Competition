@@ -260,7 +260,7 @@ class Competition {
 		unset($results[0]); //remove draws
 		$maxNumWins = max($results);
 		$minNumWins = min($results);
-		if ($roundsToGo < (maxNumWins - $minNumWins)) {
+		if ($roundsToGo < ($maxNumWins - $minNumWins)) {
 			//no use playing on anymore
 			return true;
 		} else {
