@@ -25,6 +25,7 @@ class Competition {
 	private $resume = false;
 	private $resumeData = array();
 	private $crashedPlayer = false;
+	private $firstResumeMatch = true;
 	
 	private $round = 0;
 	private $leagueGroup = 0;
@@ -405,8 +406,14 @@ class Competition {
 		}
 
 		$batchResultsDir = $roundDir.min($player1, $player2)."-".max($player1, $player2)."/";
+		
+		if ($this->resume && $this->firstResumeMatch && file_exists($batchResultsDir)) {
+			//the last competition run probably failed some time when playing this match. 
+			//remove all results, so we don't have overlapping stuff
+			shell_exec("rm -r ".$batchResultsDir);
+			$this->firstResumeMatch = false;
+		}
 		if (!is_dir($batchResultsDir)) mkdir($batchResultsDir);
-
 		if ($this->extraGames) {
 			$batchResultsDir .= "draw/";
 			if (!is_dir($batchResultsDir)) mkdir($batchResultsDir);
@@ -417,7 +424,7 @@ class Competition {
 		if (!$this->crashedPlayer) {
 			//player crashed, we have no visualization to show...
 			$visualizationDir = substr($gameFile, 0, strlen($gameFile) - 4)."/";
-			if (file_exists($visualizationDir)) shell_exec("rm -r ".$visualizationdir);
+			if (file_exists($visualizationDir)) shell_exec("rm -r ".$visualizationDir);
 			mkdir($visualizationDir);
 			shell_exec("cp -r ".$this->config['paths']['visualizer']."* ".$visualizationDir);
 			shell_exec("cat ".$gameFile." | python ".$visualizationDir."visualize_locally.py");
