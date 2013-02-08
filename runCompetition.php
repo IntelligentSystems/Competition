@@ -6,8 +6,13 @@ error_reporting(E_ALL ^ E_NOTICE);
 $config = parse_ini_file("config.ini", true);
 
 $comResult = -1;
+$resume = false;
+if (count($argv) === 2) {
+	//we have an arg
+	$resume = (bool)end($argv);
+}
 while ($comResult === -1) {
-	$competition = new Competition($config);
+	$competition = new Competition($config, $resume);
 	//redo competition until we have a valid set of group winners 
 	$comResult = $competition->run();
 }
@@ -17,16 +22,25 @@ class Competition {
 	private $groups;
 	private $maps;
 	private $extraGames = false; //flag to indicate we are doing extra matches because of a draw
+	private $resume = false;
+	private $resumeData = array();
 	
 	private $round = 0;
 	private $leagueGroup = 0;
-	function __construct($config) {
+	function __construct($config, $resume) {
+		$this->resume = $resume;
 		$this->config = $config;
 		$this->groups = $this->getAllGroups();
 		$this->maps = $this->getMaps();
-		$this->log("Compiling " . count($this->groups) . " groups");
-		$this->preProcessGroups();
-		$this->clearPreviousTournamentResults();
+		if (!$resume) {
+			$this->log("Compiling " . count($this->groups) . " groups");
+			$this->preProcessGroups();
+			$this->clearPreviousTournamentResults();
+			$this->clearPreviousResumeData();
+		} else {
+			$this->log("resuming competition");
+		}
+		
 	}
 	
 	function run() {
@@ -42,8 +56,16 @@ class Competition {
 	}
 	
 	function runLeague($groups) {
+		
 		$winners = array();
+		$fromLeague = 0; //run all leagues
+		
+		if ($this->resume) {
+			$fromLeague = ($this->loadIntFromFile($this->config['resumeLog']['lastCompletedLeague'], -1) + 1) ;
+			$winners = $this->loadArrayFromFile($this->config['resumeLog']['leagueWinners'], false);
+		}
 		foreach ($groups as $key => $group) {
+			if ($key < $fromLeague) continue; //already have results for this group. resuming from somewhere else
 			$this->leagueGroup++;
 			$this->log("Running games for league group " . ($this->leagueGroup));
 			
@@ -53,6 +75,8 @@ class Competition {
 				return -1;
 			}
 			$winners = array_merge($winners,$groupWinners);
+			file_put_contents($this->config['resumeLog']['lastCompletedLeague'], $key);
+			file_put_contents($this->config['resumeLog']['leagueWinners'], var_export($winners, true));
 			
 		}
 		return $winners;
@@ -60,11 +84,21 @@ class Competition {
 	
 	function runLeagueForGroup($group) {
 		$scores = array();
-		foreach ($group as $botId) {
-			$scores[$botId] = 0;
+		$fromMatch = 0; //to be able to resume from somewhere within a league
+		if ($this->resume) {
+			$scores = $this->loadArrayFromFile($this->config['resumeLog']['leagueScores'], false);
+			$fromMatch = ($this->loadIntFromFile($this->config['resumeLog']['lastCompletedLeagueMatch'], -1) + 1);
 		}
+		if (!count($scores)) {
+			foreach ($group as $botId) {
+				$scores[$botId] = 0;
+			}
+		}
+		
 		$schedule = $this->getLeagueSchedule($group);
-		foreach ($schedule as $game) {
+		file_put_contents($this->config['resumeLog']['leagueSchedule'], var_export($schedule, true));
+		foreach ($schedule as $matchKey => $game) {
+			if ($matchKey < $fromMatch) continue; //already have results for this match. resuming from somewhere else
 			$player2 = reset($game);
 			$player1 = key($game);
 			$winner = $this->getWinner($player1, $player2, false, true);
@@ -75,6 +109,8 @@ class Competition {
 			} else {
 				$scores[$winner] += 3;
 			}
+			file_put_contents($this->config['resumeLog']['leagueScores'], var_export($scores, true));
+			file_put_contents($this->config['resumeLog']['lastCompletedLeagueMatch'], $matchKey);
 		}
 		
 		//finished with all the games. select winners!
@@ -114,20 +150,26 @@ class Competition {
 	
 	function getMiniLeagueGroups() {
 		$league = array();
-		$groups = $this->groups;
-		shuffle($groups);
-		$numGroups = $this->config['game']['numMiniLeagues'];
-		$modulo = count($groups) % $numGroups;
-		$groupSize = (count($groups) - $modulo) / $numGroups;
-		$groupsAssigned = 0;
-		for ($groupNum = 0; $groupNum < $numGroups; $groupNum++) {
-			$size = $groupSize;
-			if ($modulo > 0) {
-				$size++;
-				$modulo--;
+		if ($resume) {
+			$league = $this->loadArrayFromFile($this->config['resumeLog']['miniLeagueGroups'], true);
+		} else {
+			$groups = $this->groups;
+			shuffle($groups);
+			$numGroups = $this->config['game']['numMiniLeagues'];
+			$modulo = count($groups) % $numGroups;
+			$groupSize = (count($groups) - $modulo) / $numGroups;
+			$groupsAssigned = 0;
+			for ($groupNum = 0; $groupNum < $numGroups; $groupNum++) {
+				$size = $groupSize;
+				if ($modulo > 0) {
+					$size++;
+					$modulo--;
+				}
+				$league[] = array_slice($groups, $groupsAssigned, $size);
+				$groupsAssigned += $size;
 			}
-			$league[] = array_slice($groups, $groupsAssigned, $size);
-			$groupsAssigned += $size;
+			$leagueString = var_export($league, true);
+			file_put_contents($this->config['resumeLog']['miniLeagueGroups'], $leagueString);
 		}
 		
 		return $league;
@@ -141,12 +183,16 @@ class Competition {
 		if (count($groups)&1) {
 			$this->error("uneven number of groups passed to knockout phase");
 		}
+		file_put_contents($this->config['resumeLog']['lastCompletedKnockoutRound'], $this->round);
+		file_put_contents($this->config['resumeLog']['groupsInKnockout'], var_export($groups, true));
 		$this->round++;
 		echo "\n### Playing round ".$this->round." ###\n";
 		$winners = array();
 		shuffle($groups);
 		for ($i = 0; $i < count($groups); $i++, $i++) {
 			$winners[] = $this->getWinner($groups[$i], $groups[$i+1]);
+			file_put_contents($this->config['resumeLog']['knockoutNumberMatchesPlayed'], $i);
+			file_put_contents($this->config['resumeLog']['knockoutWinners'], var_export($winners, true));
 		}
 		if (count($winners) === 1) {
 			$this->log("We have a winnerrrrr! \n##### group".reset($winners)." #####");
@@ -163,6 +209,15 @@ class Competition {
 		}
 		if (file_exists($this->config['paths']['competitionLog'])) {
 			shell_exec("rm ".$this->config['paths']['competitionLog']);
+		}
+	}
+	
+	function clearPreviousResumeData() {
+		$this->log("Clearing resume log");
+		foreach ($this->config['resumeLog'] AS $logFile) {
+			if (file_exists($logFile)) {
+				shell_exec("rm $logFile");
+			}
 		}
 	}
 
@@ -508,6 +563,48 @@ class Competition {
 	function error($message) {
 		echo "*** ".$message." \nexiting...***\n";
 		exit;
+	}
+	
+	
+	
+	function loadArrayFromFile($file, $required = false) {
+		$result = array();
+		if ($required && !file_exists($file)) {
+			$this->error("File $file does not exist. Unable to load array");
+		}
+		if (file_exists($file)) {
+			$string = file_get_contents($file);
+			if ($required && !strlen($string)) {
+				$this->error("Unable to get array from file. Empty string");
+			}
+			eval('$result = '.$string.';');
+			if (!is_array($result)) {
+				$this->error("Couldnt array file. Result: ".var_export($result, true));
+			}
+			if (!count($result)) {
+				$this->log("Parsed array from file, but its empty. File ".$file." Content: ".$string." array: ".var_export($result, true));
+			}
+		}
+		return $result;
+	}
+	
+	function loadIntFromFile($file, $default = null) {
+		$result = $default;
+		if (is_null($default) && !file_exists($file)) {
+			$this->error("File $file does not exist. Unable to load int");
+		}
+		if (file_exists($file)) {
+			$string = file_get_contents($file);
+			if (is_null($default) && !strlen($string)) {
+				$this->error("Empty string in file $file");
+			}
+			if (is_null($default) && !is_numeric($string)) {
+				$this->error("tried getting integer from file, but its not numeric. result: ".$string);
+			}
+			$result = (int)$string;
+		}
+		return $result;
+		
 	}
 }
 
