@@ -456,7 +456,7 @@ class Competition {
 				$crashedPlayer = (int)end($matches2);
 				if ($crashedPlayer === 1 || $crashedPlayer === 2) {
 					$this->crashedPlayer = true;
-					echo (" P".$crashedPlayer." crashed (LOSE!) ");
+					echo (" P".($crashedPlayer == 1? $player1 : $player2)." crashed (LOSE!) ");
 					if ($crashedPlayer === 1) {
 						$winner = 2;
 					} else {
