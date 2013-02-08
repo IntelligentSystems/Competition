@@ -67,7 +67,7 @@ class Competition {
 		foreach ($schedule as $game) {
 			$player2 = reset($game);
 			$player1 = key($game);
-			$winner = $this->getWinner($player1, $player2, false);
+			$winner = $this->getWinner($player1, $player2, false, true);
 			if ($winner == 0) {
 				//draw
 				$scores[$player1]++;
@@ -180,8 +180,9 @@ class Competition {
 	 * @param unknown $group1
 	 * @param unknown $group2
 	 * @param $forceWinner false: draws are possible, true: first player to win twice on 1 map wins. if still a draw, flip coins
+	 * @param $stopEarly Try to stop early (i.e. when player1 has no way of catching up to player2, then stop the running of games)
 	 */
-	function getWinner($group1, $group2, $forceWinner = true) {
+	function getWinner($group1, $group2, $forceWinner = true, $stopEarly = false) {
 		echo "games: ".$group1." - ".$group2."\n\t";
 		$results = array(
 			0 => 0, //for keeping track of draws...
@@ -189,6 +190,7 @@ class Competition {
 			$group2 => 0
 		);
 		$this->prepareCompetitionDir($group1, $group2);
+		shuffle($this->maps);
 		foreach ($this->maps as $map) {
 			$gameWinner = $this->runGame($group1, $group2, $map);
 			echo $gameWinner." ";
@@ -196,6 +198,10 @@ class Competition {
 			$gameWinner = $this->runGame($group2, $group1, $map);
 			echo $gameWinner." ";
 			$results[$gameWinner]++;
+			if ($stopEarly && $this->stopRoundsEarly($results)) {
+				$this->log("no use playing on anymore. 1 player too far ahead. braeking from game look");
+				break;
+			}
 		}
 		
 		$roundWinner = 0;
@@ -203,8 +209,7 @@ class Competition {
 		if ($results[$group1] === $results[$group2]) {
 			if ($forceWinner) {
 				$this->extraGames = true;
-				$maps = $this->maps;
-				shuffle($maps);
+				shuffle($this->maps);
 				$this->log("playing maps consecutively now. First to win twice on 1 map wins");
 				foreach ($this->maps as $map) {
 					
@@ -241,6 +246,28 @@ class Competition {
 			echo("WINNER *** ".$group2." ***\n");
 		}
 		return $roundWinner;
+		
+	}
+	
+	
+	
+	function stopRoundsEarly($results) {
+		$numRoundsInMatch = (count($this->maps) * 2);
+		$roundsToGo = 0;
+		foreach ($results AS $player => $result) {
+			$roundsToGo = $roundsToGo - $result;
+			
+		}
+		unset($results[0]); //remove draws
+		$maxNumWins = max($results);
+		$minNumWins = min($result);
+		if ($roundsToGo < (maxNumWins - $minNumWins)) {
+			//no use playing on anymore
+			return true;
+		} else {
+			return false;
+		}
+		
 		
 	}
 	
