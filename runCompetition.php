@@ -409,7 +409,8 @@ class Competition {
 		}
 		$gameFile = $batchResultsDir."w".$winner."_".$player1."-".$player2."_".$map; 
 		file_put_contents($gameFile, $resultString);
-		if (!$this->$crashedPlayer) {
+		if (!$this->crashedPlayer) {
+			//player crashed, we have no visualization to show...
 			$visualizationDir = substr($gameFile, 0, strlen($gameFile) - 4)."/";
 			mkdir($visualizationDir);
 			shell_exec("cp -r ".$this->config['paths']['visualizer']."* ".$visualizationDir);
