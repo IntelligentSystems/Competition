@@ -24,6 +24,7 @@ class Competition {
 	private $extraGames = false; //flag to indicate we are doing extra matches because of a draw
 	private $resume = false;
 	private $resumeData = array();
+	private $crashedPlayer = false;
 	
 	private $round = 0;
 	private $leagueGroup = 0;
@@ -58,15 +59,16 @@ class Competition {
 	function runLeague($groups) {
 		
 		$winners = array();
-		$fromLeague = 0; //run all leagues
+		$fromLeague = 1; //run all leagues
 		
 		if ($this->resume) {
-			$fromLeague = ($this->loadIntFromFile($this->config['resumeLog']['lastCompletedLeague'], -1) + 1) ;
+			$fromLeague = ($this->loadIntFromFile($this->config['resumeLog']['lastCompletedLeague'], 0) + 1) ;
 			$winners = $this->loadArrayFromFile($this->config['resumeLog']['leagueWinners'], false);
 		}
-		foreach ($groups as $key => $group) {
-			if ($key < $fromLeague) continue; //already have results for this group. resuming from somewhere else
+		foreach ($groups as $group) {
+			
 			$this->leagueGroup++;
+			if ($this->leagueGroup < $fromLeague) continue; //already have results for this group. resuming from somewhere else
 			$this->log("Running games for league group " . ($this->leagueGroup));
 			
 			$groupWinners = $this->runLeagueForGroup($group);
@@ -75,7 +77,7 @@ class Competition {
 				return -1;
 			}
 			$winners = array_merge($winners,$groupWinners);
-			file_put_contents($this->config['resumeLog']['lastCompletedLeague'], $key);
+			file_put_contents($this->config['resumeLog']['lastCompletedLeague'], $this->leagueGroup);
 			file_put_contents($this->config['resumeLog']['leagueWinners'], var_export($winners, true));
 			
 		}
@@ -211,6 +213,8 @@ class Competition {
 			shell_exec("rm ".$this->config['paths']['competitionLog']);
 		}
 	}
+	
+
 	
 	function clearPreviousResumeData() {
 		$this->log("Clearing resume log");
@@ -405,18 +409,22 @@ class Competition {
 		}
 		$gameFile = $batchResultsDir."w".$winner."_".$player1."-".$player2."_".$map; 
 		file_put_contents($gameFile, $resultString);
-		
-		$visualizationDir = substr($gameFile, 0, strlen($gameFile) - 4)."/";
-		mkdir($visualizationDir);
-		shell_exec("cp -r ".$this->config['paths']['visualizer']."* ".$visualizationDir);
-		shell_exec("cat ".$gameFile." | python ".$visualizationDir."visualize_locally.py");
-		
-		$html = file_get_contents($visualizationDir."generated.htm");
-		$html = str_replace("%PLAYER1%", $this->getBotName($player1), $html);
-		$html = str_replace("%PLAYER2%", $this->getBotName($player2), $html);
-		
-		$html = str_replace("%ROUND%", "Round ".$this->round, $html);
-		file_put_contents($visualizationDir."generated.htm", $html);
+		if (!$this->$crashedPlayer) {
+			$visualizationDir = substr($gameFile, 0, strlen($gameFile) - 4)."/";
+			mkdir($visualizationDir);
+			shell_exec("cp -r ".$this->config['paths']['visualizer']."* ".$visualizationDir);
+			shell_exec("cat ".$gameFile." | python ".$visualizationDir."visualize_locally.py");
+			
+			$html = file_get_contents($visualizationDir."generated.htm");
+			$html = str_replace("%PLAYER1%", $this->getBotName($player1), $html);
+			$html = str_replace("%PLAYER2%", $this->getBotName($player2), $html);
+			
+			$html = str_replace("%ROUND%", "Round ".$this->round, $html);
+			file_put_contents($visualizationDir."generated.htm", $html);
+			
+		} else {
+			$this->crashedPlayer = false;
+		}
 	}
 	
 	function getGameResult($resultString, $player1, $player2, $command, $dir) {
@@ -429,10 +437,11 @@ class Competition {
 			$winner = (int)end($matches);
 			if ($winner < 1 || $winner > 2) {
 				//no winner in output...
-				$pattern2 = "/.*WARNING: player (\d) crashed/";//WARNING: player 2 crashed
+				$pattern2 = "/.*WARNING: player (\d) crashed/";//WARNING: player \d crashed
 				preg_match($pattern2, $resultString, $matches2);
 				$crashedPlayer = (int)end($matches2);
 				if ($crashedPlayer === 1 || $crashedPlayer === 2) {
+					$this->crashedPlayer = true;
 					echo (" P".$crashedPlayer." crashed (LOSE!) ");
 					if ($crashedPlayer === 1) {
 						$winner = 2;
