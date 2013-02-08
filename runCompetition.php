@@ -252,8 +252,7 @@ class Competition {
 	
 	
 	function stopRoundsEarly($results) {
-		$numRoundsInMatch = (count($this->maps) * 2);
-		$roundsToGo = 0;
+		$roundsToGo = (count($this->maps) * 2);
 		foreach ($results AS $player => $result) {
 			$roundsToGo = $roundsToGo - $result;
 			

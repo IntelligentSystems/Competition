@@ -13,7 +13,7 @@ var Visualizer = {
     dirtyRegions: [],
     config : {
       planet_font: 'bold 15px Arial,Helvetica',
-      fleet_font: 'normal 12px Arial,Helvetica',
+      fleet_font: 'normal 15px Arial,Helvetica',
       planet_pixels: [10,13,18,21,23,29],
       showFleetText: true,
       display_margin: 50,
@@ -121,7 +121,7 @@ var Visualizer = {
           ctx.save();
           ctx.translate(disp_x, this.canvas.height - disp_y);
           
-          var scale = Math.log(Math.max(fleet.numShips,4)) * 0.03;
+          var scale = Math.log(Math.max(fleet.numShips,10)) * 0.07;
           ctx.scale(scale, scale);
           
           var angle = Math.PI/2 - Math.atan(
