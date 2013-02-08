@@ -152,7 +152,7 @@ class Competition {
 	
 	function getMiniLeagueGroups() {
 		$league = array();
-		if ($resume) {
+		if ($this->resume) {
 			$league = $this->loadArrayFromFile($this->config['resumeLog']['miniLeagueGroups'], true);
 		} else {
 			$groups = $this->groups;
@@ -170,8 +170,7 @@ class Competition {
 				$league[] = array_slice($groups, $groupsAssigned, $size);
 				$groupsAssigned += $size;
 			}
-			$leagueString = var_export($league, true);
-			file_put_contents($this->config['resumeLog']['miniLeagueGroups'], $leagueString);
+			file_put_contents($this->config['resumeLog']['miniLeagueGroups'], var_export($league, true));
 		}
 		
 		return $league;
@@ -312,16 +311,21 @@ class Competition {
 	
 	function stopRoundsEarly($results) {
 		$roundsToGo = (count($this->maps) * 2);
+		
 		foreach ($results AS $player => $result) {
 			$roundsToGo = $roundsToGo - $result;
 			
 		}
-		unset($results[0]); //remove draws
-		$maxNumWins = max($results);
-		$minNumWins = min($results);
-		if ($roundsToGo < ($maxNumWins - $minNumWins)) {
-			//no use playing on anymore
-			return true;
+		if ($roundsToGo > 0) {
+			unset($results[0]); //remove draws
+			$maxNumWins = max($results);
+			$minNumWins = min($results);
+			if ($roundsToGo < ($maxNumWins - $minNumWins)) {
+				//no use playing on anymore
+				return true;
+			} else {
+				return false;
+			}
 		} else {
 			return false;
 		}
@@ -407,11 +411,13 @@ class Competition {
 			$batchResultsDir .= "draw/";
 			if (!is_dir($batchResultsDir)) mkdir($batchResultsDir);
 		}
+		
 		$gameFile = $batchResultsDir."w".$winner."_".$player1."-".$player2."_".$map; 
 		file_put_contents($gameFile, $resultString);
 		if (!$this->crashedPlayer) {
 			//player crashed, we have no visualization to show...
 			$visualizationDir = substr($gameFile, 0, strlen($gameFile) - 4)."/";
+			if (file_exists($visualizationDir)) shell_exec("rm -r ".$visualizationdir);
 			mkdir($visualizationDir);
 			shell_exec("cp -r ".$this->config['paths']['visualizer']."* ".$visualizationDir);
 			shell_exec("cat ".$gameFile." | python ".$visualizationDir."visualize_locally.py");
