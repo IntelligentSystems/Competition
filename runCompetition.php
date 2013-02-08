@@ -260,7 +260,7 @@ class Competition {
 		}
 		unset($results[0]); //remove draws
 		$maxNumWins = max($results);
-		$minNumWins = min($result);
+		$minNumWins = min($results);
 		if ($roundsToGo < (maxNumWins - $minNumWins)) {
 			//no use playing on anymore
 			return true;
@@ -484,6 +484,7 @@ class Competition {
 	function getAllGroups() {
 		$prefix = $this->config['paths']['submissionsDirPrefix'];
 		$dirs = glob($prefix.'*');
+		
 		$groups = array();
 		foreach ($dirs as $dir) {
 			$pattern = str_replace("/", "\/", $prefix); //escape slashes
