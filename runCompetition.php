@@ -266,6 +266,7 @@ class Competition {
 		$roundWinner = 0;
 		
 		if ($results[$group1] === $results[$group2]) {
+			$winnerFound = false;
 			if ($forceWinner) {
 				$this->extraGames = true;
 				shuffle($this->maps);
@@ -280,19 +281,21 @@ class Competition {
 						//yes!! this player won two games on this map. stop the loop, he won this round
 						$roundWinner = $gameWinner1;
 						echo("WINNER *** ".$gameWinner1." ***\n");
-						$this->extraGames = false;
+						$winnerFound = true;
 						break;
 					}
 				}
 				$this->extraGames = false;
-				//havent found a winner this way... just flip a coin
-				$rand = rand(1,2);
-				if ($rand === 1) {
-					$roundWinner = $group1;
-				} else {
-					$roundWinner = $group2;
+				if (!$winnerFound) {
+					//havent found a winner this way... just flip a coin
+					$rand = rand(1,2);
+					if ($rand === 1) {
+						$roundWinner = $group1;
+					} else {
+						$roundWinner = $group2;
+					}
+					echo("DRAW. Flipping a coin, and the winner is.... ".$roundWinner."!!\n");
 				}
-				echo("DRAW. Flipping a coin, and the winner is.... ".$roundWinner."!!\n");
 			} else {
 				//keep roundwinner as 0
 				echo "DRAW. (not flipping a coin here)\n";
