@@ -255,7 +255,7 @@ class Competition {
 			echo $gameWinner." ";
 			$results[$gameWinner]++;
 			if ($stopEarly && $this->stopRoundsEarly($results)) {
-				$this->log("no use playing on anymore. 1 player too far ahead. braeking from game look");
+				$this->log("no use playing on anymore. 1 player too far ahead. braeking from game loop");
 				break;
 			}
 			$gameWinner = $this->runGame($group2, $group1, $map);
