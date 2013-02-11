@@ -463,7 +463,7 @@ class Competition {
 					if ($crashedPlayer === 1) {
 						$winner = 2;
 					} else {
-						$crashedPlayer = 1;
+						$winner = 1;
 					}
 				} else {
 					$this->error("Unable to parse output results. Who is the winner?? \nCommand: ".$command."\nDir:".$dir."\nOutput: ".$resultString);
