@@ -351,6 +351,21 @@ class Competition {
 		$this->copyFilesInDir($this->config['paths']['pwMaps'], $competitionDir);
 	}
 	
+	function getBotRunCmd($groupNumber) {
+		$botName = $this->getBotName($groupNumber);
+		$this->config['paths']['botsCompiled'].$group."/bot.txt";
+		if (file_exists($this->config['paths']['botsCompiled'].$groupNumber."/".$botName . ".java")) {
+			return " \"java -Xmx" . $this->config['game']['maxMemory'] ."m ".$botName."\" ";
+		} else if (file_exists($this->config['paths']['botsCompiled'].$groupNumber."/".$botName . ".py")) {
+			return " \"python ".$botName.".py\" ";
+		} else {
+			echo "we tried to detect whether this is a java or python bot, to check which command to play to game with. However, we could detect whether this is a java or python file...\n";
+			echo "cwd: " . getcwd()."\n";
+			echo "botname: ".$botName."\n";
+			exit;
+		}
+	}
+		
 	function runGame($player1, $player2, $map) {
 		$player1BotName = $this->getBotName($player1);
 		$player2BotName = $this->getBotName($player2);
@@ -359,9 +374,9 @@ class Competition {
 		
 		$workingDir = getcwd();
 		$resultFile = $player1."-".$player2."_".$map;
-		
 		$cmd = "java -jar PlayGame.jar ".$map;
-		$cmd .= " \"java -Xmx" . $this->config['game']['maxMemory'] ."m ".$player1BotName."\" \"java -Xmx" . $this->config['game']['maxMemory'] ."m ".$player2BotName."\"";
+		$cmd .= $this->getBotRunCmd($player1) . $this->getBotRunCmd($player2);
+		//$cmd .= " \"java -Xmx" . $this->config['game']['maxMemory'] ."m ".$player1BotName."\" \"java -Xmx" . $this->config['game']['maxMemory'] ."m ".$player2BotName."\"";
 		$cmd .= " parallel ".$this->config['game']['numTurns']." ".$this->config['game']['maxTurnTime'];
 		
 		//cannot just pipe stderr to stdout: we need seperate pipes. stderr for analyzing who won, and stdout for the visualizer

@@ -165,7 +165,6 @@ public class PlanetWars {
 
     public void IssueOrder(Planet source, Planet dest) {
         System.out.println("" + source.PlanetID() + " " + dest.PlanetID());
-        System.out.println("go");
 	System.out.flush();
     }
 
